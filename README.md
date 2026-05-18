@@ -1,6 +1,16 @@
 # todo_app
 
-A new Flutter project.
+CRUD task manager built with Flutter, Bloc, and Dio.
+
+This app uses a shared REST API for task operations. Update the base URL in `lib/core/constants/api_constants.dart` to match your coursework backend.
+
+## Features
+
+- Read, create, update, and delete tasks
+- Bloc state management with loading and error handling
+- Dio networking layer
+- Swipe to delete and edit task flow
+- Material 3 UI inspired by the supplied mockup
 
 ## Getting Started
 
@@ -15,3 +25,7 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+
+
+
