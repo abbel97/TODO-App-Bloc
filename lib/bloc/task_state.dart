@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
-
-import '../data/models/task_model.dart';
+import '../models/task_model.dart';
 
 abstract class TaskState extends Equatable {
   const TaskState();
@@ -9,41 +8,28 @@ abstract class TaskState extends Equatable {
   List<Object?> get props => [];
 }
 
-class TaskLoading extends TaskState {
-  const TaskLoading();
-}
+// Initial state before anything loads
+class TaskInitial extends TaskState {}
 
+// Shown during any network call
+class TaskLoading extends TaskState {}
+
+// Holds the full task list — single source of truth
 class TaskLoaded extends TaskState {
-  const TaskLoaded({
-    required this.tasks,
-    this.isSyncing = false,
-    this.message,
-  });
-
   final List<TaskModel> tasks;
-  final bool isSyncing;
-  final String? message;
+  const TaskLoaded(this.tasks);
+
+  List<TaskModel> get active    => tasks.where((t) => !t.isCompleted).toList();
+  List<TaskModel> get completed => tasks.where((t) => t.isCompleted).toList();
 
   @override
-  List<Object?> get props => [tasks, isSyncing, message];
-
-  TaskLoaded copyWith({
-    List<TaskModel>? tasks,
-    bool? isSyncing,
-    String? message,
-  }) {
-    return TaskLoaded(
-      tasks: tasks ?? this.tasks,
-      isSyncing: isSyncing ?? this.isSyncing,
-      message: message,
-    );
-  }
+  List<Object?> get props => [tasks];
 }
 
+// Shown when an API call fails
 class TaskError extends TaskState {
-  const TaskError(this.message);
-
   final String message;
+  const TaskError(this.message);
 
   @override
   List<Object?> get props => [message];

@@ -1,106 +1,105 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../core/errors/app_exception.dart';
-import '../data/repositories/task_repository.dart';
+import 'package:dio/dio.dart';
+import '../services/task_service.dart';
+import '../models/task_model.dart';
 import 'task_event.dart';
 import 'task_state.dart';
 
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
-  TaskBloc(this._repository) : super(const TaskLoading()) {
-    on<LoadTasks>(_onLoadTasks);
-    on<AddTask>(_onAddTask);
-    on<UpdateTask>(_onUpdateTask);
-    on<DeleteTask>(_onDeleteTask);
-    on<ToggleTaskStatus>(_onToggleTaskStatus);
+  final TaskService _service;
+
+  TaskBloc({TaskService? service})
+      : _service = service ?? TaskService(),
+        super(TaskInitial()) {
+    on<LoadTasks>(_onLoad);
+    on<AddTask>(_onAdd);
+    on<UpdateTask>(_onUpdate);
+    on<DeleteTask>(_onDelete);
+    on<ToggleTask>(_onToggle);
   }
 
-  final TaskRepository _repository;
+  // Returns a mutable copy of the current task list
+  List<TaskModel> get _tasks =>
+      state is TaskLoaded ? List.from((state as TaskLoaded).tasks) : [];
 
-  Future<void> _onLoadTasks(LoadTasks event, Emitter<TaskState> emit) async {
-    emit(const TaskLoading());
+  String _errorMessage(Object e) {
+    if (e is DioException) {
+      return e.response?.data?.toString() ??
+          e.message ??
+          'Network error. Please try again.';
+    }
+    return 'Something went wrong.';
+  }
+
+  // ── Load ──────────────────────────────────────────────────────────────────
+
+  Future<void> _onLoad(LoadTasks event, Emitter<TaskState> emit) async {
+    emit(TaskLoading());
     try {
-      final tasks = await _repository.getTasks();
-      emit(TaskLoaded(tasks: tasks));
-    } on AppException catch (error) {
-      emit(TaskError(error.message));
-    } catch (error) {
-      emit(TaskError(error.toString()));
+      final tasks = await _service.fetchAll();
+      emit(TaskLoaded(tasks));
+    } catch (e) {
+      emit(TaskError(_errorMessage(e)));
     }
   }
 
-  Future<void> _onAddTask(AddTask event, Emitter<TaskState> emit) async {
-    final loadedState = state is TaskLoaded ? state as TaskLoaded : null;
-    if (loadedState != null) {
-      emit(loadedState.copyWith(isSyncing: true, message: null));
-    }
+  // ── Add ───────────────────────────────────────────────────────────────────
 
+  Future<void> _onAdd(AddTask event, Emitter<TaskState> emit) async {
     try {
-      await _repository.createTask(event.task);
-      await _refreshTasks(emit, successMessage: 'Task added successfully');
-    } on AppException catch (error) {
-      emit(TaskError(error.message));
-    } catch (error) {
-      emit(TaskError(error.toString()));
+      final created = await _service.create(event.task);
+      final tasks = _tasks..insert(0, created);
+      emit(TaskLoaded(tasks));
+    } catch (e) {
+      emit(TaskError(_errorMessage(e)));
     }
   }
 
-  Future<void> _onUpdateTask(UpdateTask event, Emitter<TaskState> emit) async {
-    final loadedState = state is TaskLoaded ? state as TaskLoaded : null;
-    if (loadedState != null) {
-      emit(loadedState.copyWith(isSyncing: true, message: null));
-    }
+  // ── Update ────────────────────────────────────────────────────────────────
 
+  Future<void> _onUpdate(UpdateTask event, Emitter<TaskState> emit) async {
     try {
-      await _repository.updateTask(event.task);
-      await _refreshTasks(emit, successMessage: 'Task updated successfully');
-    } on AppException catch (error) {
-      emit(TaskError(error.message));
-    } catch (error) {
-      emit(TaskError(error.toString()));
+      final updated = await _service.update(event.task);
+      final tasks = _tasks;
+      final index = tasks.indexWhere((t) => t.id == updated.id);
+      if (index != -1) tasks[index] = updated;
+      emit(TaskLoaded(tasks));
+    } catch (e) {
+      emit(TaskError(_errorMessage(e)));
     }
   }
 
-  Future<void> _onDeleteTask(DeleteTask event, Emitter<TaskState> emit) async {
-    final loadedState = state is TaskLoaded ? state as TaskLoaded : null;
-    if (loadedState != null) {
-      emit(loadedState.copyWith(isSyncing: true, message: null));
-    }
+  // ── Delete (optimistic) ───────────────────────────────────────────────────
 
+  Future<void> _onDelete(DeleteTask event, Emitter<TaskState> emit) async {
+    final backup = _tasks;
+    emit(TaskLoaded(_tasks..removeWhere((t) => t.id == event.id)));
     try {
-      await _repository.deleteTask(event.taskId);
-      await _refreshTasks(emit, successMessage: 'Task deleted successfully');
-    } on AppException catch (error) {
-      emit(TaskError(error.message));
-    } catch (error) {
-      emit(TaskError(error.toString()));
+      await _service.delete(event.id);
+    } catch (e) {
+      emit(TaskLoaded(backup));
+      emit(TaskError(_errorMessage(e)));
     }
   }
 
-  Future<void> _onToggleTaskStatus(
-    ToggleTaskStatus event,
-    Emitter<TaskState> emit,
-  ) async {
-    final updatedTask = event.task.copyWith(isCompleted: !event.task.isCompleted);
-    final loadedState = state is TaskLoaded ? state as TaskLoaded : null;
-    if (loadedState != null) {
-      emit(loadedState.copyWith(isSyncing: true, message: null));
-    }
+  // ── Toggle completion ─────────────────────────────────────────────────────
 
+  Future<void> _onToggle(ToggleTask event, Emitter<TaskState> emit) async {
+    final toggled = event.task.copyWith(isCompleted: !event.task.isCompleted);
+    // Optimistic update
+    final tasks = _tasks;
+    final index = tasks.indexWhere((t) => t.id == event.task.id);
+    if (index != -1) tasks[index] = toggled;
+    emit(TaskLoaded(tasks));
     try {
-      await _repository.updateTask(updatedTask);
-      await _refreshTasks(emit, successMessage: 'Task status updated');
-    } on AppException catch (error) {
-      emit(TaskError(error.message));
-    } catch (error) {
-      emit(TaskError(error.toString()));
+      await _service.update(toggled);
+    } catch (e) {
+      // Rollback
+      final rollback = _tasks;
+      final ri = rollback.indexWhere((t) => t.id == event.task.id);
+      if (ri != -1) rollback[ri] = event.task;
+      emit(TaskLoaded(rollback));
+      emit(TaskError(_errorMessage(e)));
     }
-  }
-
-  Future<void> _refreshTasks(
-    Emitter<TaskState> emit, {
-    required String successMessage,
-  }) async {
-    final tasks = await _repository.getTasks();
-    emit(TaskLoaded(tasks: tasks, message: successMessage));
   }
 }

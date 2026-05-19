@@ -1,75 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'bloc/task_bloc.dart';
 import 'bloc/task_event.dart';
-import 'core/constants/api_constants.dart';
-import 'core/network/dio_client.dart';
-import 'data/datasources/task_remote_datasource.dart';
-import 'data/repositories/task_repository.dart';
-import 'presentation/screens/task_list_screen.dart';
+import './presentation/screens/home_screen.dart';
 
-void main() {
-  final dioClient = DioClient(baseUrl: ApiConstants.baseUrl);
-  final dataSource = TaskRemoteDataSource(dioClient.dio);
-  final repository = TaskRepository(dataSource);
-
-  runApp(MyApp(repository: repository));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  runApp(const TodoApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key, this.repository});
-
-  final TaskRepository? repository;
+class TodoApp extends StatelessWidget {
+  const TodoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final repositoryInstance = repository ??
-        TaskRepository(
-          TaskRemoteDataSource(
-            DioClient(baseUrl: ApiConstants.baseUrl).dio,
-          ),
-        );
-
     return BlocProvider(
-      create: (_) => TaskBloc(repositoryInstance)..add(const LoadTasks()),
+      create: (_) => TaskBloc()..add(LoadTasks()),
       child: MaterialApp(
+        title: 'My Todo List',
         debugShowCheckedModeBanner: false,
-        title: 'Todo App',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF5D479D),
-            surface: const Color(0xFFF5F6FA),
-          ),
-          scaffoldBackgroundColor: const Color(0xFFF5F6FA),
-          appBarTheme: const AppBarTheme(centerTitle: true),
-          cardTheme: CardThemeData(
-            color: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFF5D479D)),
-            ),
-          ),
-        ),
-        home: const TaskListScreen(),
+        theme: _buildTheme(),
+        home: const HomeScreen(),
       ),
     );
   }
+}
+
+ThemeData _buildTheme() {
+  const purple = Color(0xFF6B35B5);
+
+  return ThemeData(
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: const Color(0xFFF4F3FA),
+    colorScheme: const ColorScheme.light(
+      primary: purple,
+      surface: Colors.white,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: purple,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: const Color(0xFFF0EEF8),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: purple, width: 1.5),
+      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ),
+  );
 }
