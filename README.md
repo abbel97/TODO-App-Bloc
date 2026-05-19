@@ -2,7 +2,6 @@
 
 CRUD task manager built with Flutter, Bloc, and Dio.
 
-
 ## Features
 
 - Create new tasks 
