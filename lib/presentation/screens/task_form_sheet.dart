@@ -106,7 +106,6 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──────────────────────────────────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -137,7 +136,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
 
             const SizedBox(height: 24),
 
-            // ── Task Title ───────────────────────────────────────────────
+            // task title
             const _Label('Task Title'),
             const SizedBox(height: 8),
             TextFormField(
@@ -153,7 +152,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
 
             const SizedBox(height: 20),
 
-            // ── When (date picker) ───────────────────────────────────────
+            // date 
             const _Label('When'),
             const SizedBox(height: 8),
             GestureDetector(
@@ -188,7 +187,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
 
             const SizedBox(height: 20),
 
-            // ── Notes ────────────────────────────────────────────────────
+            // notes
             const _Label('Notes'),
             const SizedBox(height: 8),
             TextFormField(
@@ -205,7 +204,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
 
             const SizedBox(height: 28),
 
-            // ── Save button ───────────────────────────────────────────────
+            // save button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
