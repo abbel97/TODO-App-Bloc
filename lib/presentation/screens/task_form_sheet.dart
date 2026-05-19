@@ -23,7 +23,7 @@ class _TaskFormSheetState extends State<TaskFormSheet> {
 
   static const _purple  = Color(0xFF6B35B5);
   static const _bgField = Color(0xFFF0EEF8);
-  static const _textSub = Color(0xFF9CA3AF);
+  ///static const _textSub = Color(0xFF9CA3AF);
   static const _hint    = Color(0xFFB0A8CC);
 
   bool get _isEdit => widget.existing != null;
