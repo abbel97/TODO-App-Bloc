@@ -8,13 +8,10 @@ abstract class TaskState extends Equatable {
   List<Object?> get props => [];
 }
 
-// Initial state before anything loads
 class TaskInitial extends TaskState {}
-
-// Shown during any network call
 class TaskLoading extends TaskState {}
 
-// Holds the full task list — single source of truth
+// Holds the full task list
 class TaskLoaded extends TaskState {
   final List<TaskModel> tasks;
   const TaskLoaded(this.tasks);
