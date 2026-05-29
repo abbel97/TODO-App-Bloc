@@ -31,7 +31,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     return 'Something went wrong.';
   }
 
-  // ── Load ──────────────────────────────────────────────────────────────────
+  //Load
 
   Future<void> _onLoad(LoadTasks event, Emitter<TaskState> emit) async {
     emit(TaskLoading());
@@ -43,7 +43,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     }
   }
 
-  // ── Add ───────────────────────────────────────────────────────────────────
+  //Add
 
   Future<void> _onAdd(AddTask event, Emitter<TaskState> emit) async {
     try {
@@ -55,7 +55,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     }
   }
 
-  // ── Update ────────────────────────────────────────────────────────────────
+  // Update
 
   Future<void> _onUpdate(UpdateTask event, Emitter<TaskState> emit) async {
     try {
@@ -69,7 +69,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     }
   }
 
-  // ── Delete (optimistic) ───────────────────────────────────────────────────
+  //Delete
 
   Future<void> _onDelete(DeleteTask event, Emitter<TaskState> emit) async {
     final backup = _tasks;
@@ -81,8 +81,6 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       emit(TaskError(_errorMessage(e)));
     }
   }
-
-  // ── Toggle completion ─────────────────────────────────────────────────────
 
   Future<void> _onToggle(ToggleTask event, Emitter<TaskState> emit) async {
     final toggled = event.task.copyWith(isCompleted: !event.task.isCompleted);
